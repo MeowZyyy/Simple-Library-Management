@@ -1,0 +1,422 @@
+// Library 
+#include <iostream>
+#include <string>
+#include <iomanip>
+#include <fstream>
+using namespace std;
+
+// STUCRT ( create custom data types )
+struct Book {
+	int id;
+	string title;
+	string author;
+	bool available;
+};
+
+struct Loan {
+	int id;
+	int bookID;
+	string name;
+	bool returned;
+	double fee;
+};
+
+// GLOBAL VARIABLES 
+Book books[100];
+Loan loans[100];
+int bookCount = 0;
+int loanCount = 0;
+
+// function prototypes 
+void saveData();
+void loadData();
+void addBook();
+void searchBook();
+void viewBooks();
+void editBook();
+void deleteBook();
+void loanBook();
+void returnBook();
+void payFee();
+bool login();
+
+// simple login function 
+bool login() {
+	string username, password;
+	int attempts = 0;
+
+	cout << "====================================" << endl;
+	cout << "  BUKIT KATIL COMMUNITY LIBRARY" << endl;
+	cout << "====================================" << endl;
+	cout << "\n========== LOGIN ==========\n";
+
+	while (attempts < 3) {
+		cout << "Username : ";
+		cin >> username;
+		cout << "Password : ";
+		cin >> password;
+
+		// username and password check
+		if (username == "admin" && password == "1234") {
+			cout << endl << "Login Succesfully" << endl;
+			return true;
+		}
+
+		else {
+			attempts++;
+			cout << "Invalid username or password. Please try again." << endl;
+			if (attempts < 3) {
+				cout << "Attempts remaining: " << (3 - attempts) << endl;
+
+			}
+		}
+	}
+	cout << "\nToo many failed attempts! Program closing...\n";
+	return false;
+}
+
+// MAIN FUNCTION
+int main() {
+	int choice;
+	loadData();
+
+	// check login 
+	if (!login()) {
+		return 0;
+
+	}
+
+	while (true) {
+		cout << endl << "========= MAIN MENU =========" << endl;
+		cout << "1. Add Book" << endl;
+		cout << "2. View Books" << endl;
+		cout << "3. Search Book" << endl;
+		cout << "4. Edit Book" << endl;
+		cout << "5. Loan Book" << endl;
+		cout << "6. Return Book" << endl;
+		cout << "7. Pay Fee" << endl;
+		cout << "8. Delete Book" << endl;
+		cout << "9. Exit" << endl;
+		cout << endl << "=============================" << endl;
+
+		cout << "Enter your choice: ";
+		cin >> choice; 
+
+		if (choice == 1) {
+			addBook();
+			saveData();
+		}
+		else if (choice == 2) {
+			viewBooks();
+		}
+		else if (choice == 3) {
+			searchBook();
+		}
+		else if (choice == 4) {
+			editBook();
+			saveData();
+		}
+		else if (choice == 5) {
+			loanBook();
+			saveData();
+		}
+		else if (choice == 6) {
+			returnBook();
+			saveData();
+		}
+		else if (choice == 7) {
+			payFee();
+			saveData();
+		}
+		else if (choice == 8) {
+			deleteBook();
+			saveData();
+		}
+		else if (choice == 9) {
+			saveData();
+			cout << endl << "=============================" << endl;
+			cout << "  Thank you! Goodbye!" << endl;
+			cout << "=============================" << endl;
+			break;
+		}
+	}
+
+	return 0;
+}
+
+// FUNCTION DEFINITIONS
+// add new book
+void addBook() {
+	if (bookCount >= 100) {
+		cout << "Book storage is full!" << endl;
+		return;
+	}
+	cout << "\n--- Add New Book ---\n";
+
+	// Auto-generate ID instead of asking user
+	books[bookCount].id = bookCount + 1;
+
+	cin.ignore();
+	cout << "Enter Title: ";
+	getline(cin, books[bookCount].title);
+	cout << "Enter Author: ";
+	getline(cin, books[bookCount].author);
+	books[bookCount].available = true;
+	bookCount++;
+	cout << "Book added successfully! Book ID: " << books[bookCount].id << endl;
+}
+
+// view all books
+void viewBooks() {
+	if (bookCount == 0) {
+		cout << "\nCatalogue is empty.\n";
+		return;
+	}
+
+	cout << "\n";
+	cout << left << setw(10) << "ID" << setw(30) << "Title" << setw(20) << "Author" << "Status" << endl;
+	cout << "----------------------------------------------------------------------" << endl;
+
+	// Table Content
+	for (int i = 0; i < bookCount; i++) {
+		cout << left << setw(10) << books[i].id
+			<< setw(30) << books[i].title
+			<< setw(20) << books[i].author
+			<< (books[i].available ? "Available" : "On Loan") << endl;
+	}
+	cout << "----------------------------------------------------------------------" << endl;
+}
+
+//search book by ID
+void searchBook() {
+	cout << "\n------- SEARCH BOOK -------\n";
+	int searchID;
+	bool found = false;
+	cout << "Enter Book ID to search: ";
+	cin >> searchID;
+
+	for (int i = 0; i < bookCount; i++) {
+		if (books[i].id == searchID) {
+			cout << "\nBook Found!\n";
+			cout << "ID: " << books[i].id << endl;
+			cout << "Title: " << books[i].title << endl;
+			cout << "Author: " << books[i].author << endl;
+			cout << "Status: " << (books[i].available ? "Available" : "On Loan") << endl;
+			found = true;
+			break;
+		}
+	}
+
+	if (!found) {
+		cout << "\nBook ID not found.\n";
+	}
+}
+
+// delete book by ID
+void deleteBook() {
+	cout << "\n------- DELETE BOOK -------\n";
+	int deleteID;
+	cout << "Enter Book ID to delete: ";
+	cin >> deleteID;
+
+	for (int i = 0; i < bookCount; i++) {
+		if (books[i].id == deleteID) {
+			// Check if book is on loan
+			if (!books[i].available) {
+				cout << "Cannot delete! Book is currently on loan.\n";
+				return;
+			}
+
+			// Shift all following books back by one index
+			for (int j = i; j < bookCount - 1; j++) {
+				books[j] = books[j + 1];
+			}
+			bookCount--;
+			cout << "Book deleted successfully!\n";
+			return;
+		}
+	}
+	cout << "Book ID not found.\n";
+}
+
+// edit book details by ID
+void editBook() {
+	cout << endl << "------- EDIT BOOK -------" << endl;
+	int editID;
+	cout << "Enter Book ID to edit: ";
+	cin >> editID;
+
+	for (int i = 0; i < bookCount; i++) {
+		if (books[i].id == editID) {
+			cout << endl << "Current Information:" << endl;
+			cout << "Title: " << books[i].title << endl;
+			cout << "Author: " << books[i].author << endl;
+
+			cin.ignore();
+			cout << endl << "Enter New Title: ";
+			getline(cin, books[i].title);
+			cout << "Enter New Author: ";
+			getline(cin, books[i].author);
+
+			cout << endl << "Book information updated!" << endl;
+			return;
+		}
+	}
+	cout << endl << "Book ID not found." << endl;
+}
+
+// loan book by ID
+void loanBook() {
+	cout << endl << "------- LOAN BOOK -------" << endl;
+	string name;
+	cin.ignore();
+	cout << "Your name: ";
+	getline(cin, name);
+
+	// Check 5 book limit
+	int count = 0;
+	for (int i = 0; i < loanCount; i++) {
+		if (loans[i].name == name && !loans[i].returned) count++;
+	}
+	if (count >= 5) {
+		cout << "Limit reached (5 max)!" << endl;
+		return;
+	}
+
+	// Check unpaid fees
+	for (int i = 0; i < loanCount; i++) {
+		if (loans[i].name == name && loans[i].fee > 0) {
+			cout << "Pay fees first!" << endl;
+			return;
+		}
+	}
+
+	// Show available books
+	for (int i = 0; i < bookCount; i++) {
+		if (books[i].available) cout << books[i].id << ". " << books[i].title << endl;
+	}
+
+	int bookID;
+	cout << "Book ID: ";
+	cin >> bookID;
+
+	// Loan the book
+	for (int i = 0; i < bookCount; i++) {
+		if (books[i].id == bookID && books[i].available) {
+			books[i].available = false;
+			loans[loanCount].id = loanCount + 1;
+			loans[loanCount].bookID = bookID;
+			loans[loanCount].name = name;
+			loans[loanCount].returned = false;
+			loans[loanCount].fee = 0;
+			loanCount++;
+			cout << "Loaned! Loan ID: " << loanCount << endl;
+			break;
+		}
+	}
+}
+
+// Function to return book
+void returnBook() {
+	cout << endl << "------- RETURN BOOK -------" << endl;
+	int loanID;
+	cout << "Loan ID: ";
+	cin >> loanID;
+
+	for (int i = 0; i < loanCount; i++) {
+		if (loans[i].id == loanID && !loans[i].returned) {
+			int days;
+			cout << "Days late (0 if on time): ";
+			cin >> days;
+
+			loans[i].returned = true;
+
+			// Calculate fee based on days
+			if (days == 1) loans[i].fee = 5;
+			else if (days == 2) loans[i].fee = 6;
+			else if (days == 3) loans[i].fee = 7;
+			else if (days > 3) loans[i].fee = 10 * days;
+
+			if (days > 0) cout << "Late! Fee: RM " << loans[i].fee << endl;
+			else cout << "On time!" << endl;
+
+			// Make book available again
+			for (int j = 0; j < bookCount; j++) {
+				if (books[j].id == loans[i].bookID) {
+					books[j].available = true;
+					break;
+				}
+			}
+			break;
+		}
+	}
+}
+
+// save data to file
+void saveData() {
+	ofstream file("library.txt");
+	file << bookCount << " " << loanCount << endl;
+	for (int i = 0; i < bookCount; i++) {
+		file << books[i].id << endl << books[i].title << endl
+			<< books[i].author << endl << books[i].available << endl;
+	}
+	for (int i = 0; i < loanCount; i++) {
+		file << loans[i].id << endl << loans[i].bookID << endl
+			<< loans[i].name << endl << loans[i].returned << endl
+			<< loans[i].fee << endl;
+	}
+	file.close();
+}
+
+// load data 
+void loadData() {
+	ifstream file("library.txt");
+	if (file.is_open()) {
+		file >> bookCount >> loanCount;
+		file.ignore();
+		for (int i = 0; i < bookCount; i++) {
+			file >> books[i].id;
+			file.ignore();
+			getline(file, books[i].title);
+			getline(file, books[i].author);
+			file >> books[i].available;
+			file.ignore();
+		}
+		for (int i = 0; i < loanCount; i++) {
+			file >> loans[i].id >> loans[i].bookID;
+			file.ignore();
+			getline(file, loans[i].name);
+			file >> loans[i].returned >> loans[i].fee;
+			file.ignore();
+		}
+		file.close();
+	}
+}
+
+void payFee() {
+	cout << endl << "------- PAY FEE -------" << endl;
+	int loanID;
+	cout << "Loan ID: ";
+	cin >> loanID;
+
+	for (int i = 0; i < loanCount; i++) {
+		if (loans[i].id == loanID && loans[i].fee > 0) {
+			double pay;
+			cout << "Fee: RM " << loans[i].fee << endl;
+			cout << "Pay: RM ";
+			cin >> pay;
+
+			if (pay >= loans[i].fee) {
+				cout << "Paid! Change: RM " << (pay - loans[i].fee) << endl;
+				loans[i].fee = 0;
+			}
+			else {
+				cout << "Not enough!" << endl;
+			}
+			break;
+		}
+	}
+}
+
+
+
